@@ -40,7 +40,7 @@ def perform_collective(output_split, input_split, pg, key="", profiler=None):
             with profiler() as prof:
                 dist.all_to_all(output_split, input_split, group=pg)
             prof.export_chrome_trace(trace_file_path)
-        time.sleep(20)
+        torch.cuda.synchronize()
 
 def benchmark_all_to_all(min_size, max_size, step, num_iters, profiler):
     rank = dist.get_rank()
@@ -92,5 +92,5 @@ def benchmark_all_to_all(min_size, max_size, step, num_iters, profiler):
                 ])
 
     if rank == 0:
-        table_results(results_grp['ep']['results'])
-        table_results(results_grp['etp']['results'])
+        table_results(results_grp['ep']['results'], "EP")
+        table_results(results_grp['etp']['results'], "ETP")

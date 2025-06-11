@@ -10,6 +10,7 @@ def profile_decorator(func):
     return wrapper
 
 
-def table_results(results):
+def table_results(results, key):
+    print(f"Metrics for {key} collective")
     headers = ["Size (floats)", "Size (KB)", "Avg Time / call", "Avg Time on all ranks"]
     print(tabulate(results, headers=headers, tablefmt="pipe"))
