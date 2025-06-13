@@ -1,3 +1,5 @@
+import collections
+
 import torch
 from tabulate import tabulate
 
@@ -13,3 +15,24 @@ def table_results(header, results, key):
 def print_rank_0(msg):
     if torch.distributed.get_rank() == 0:
         print(msg)
+
+def get_combined_results(results_dict, header):
+    time_idx = header.index(AVG_TIME)
+    combined_dict = collections.defaultdict(lambda: 0)
+
+    for key, val_list in results_dict.items():
+        for values in val_list:
+            time, metric = values[time_idx].split(" ")
+            values.pop(time_idx)
+            combined_dict[tuple([str(item) for item in values])] += float(time)
+
+    combined_list = []
+    for key, val in combined_dict.items():
+        keys = list(key)
+        keys.insert(time_idx, f"{val} {metric}")
+        combined_list.append(keys)
+
+    combined_list.sort(key=lambda x: x[time_idx].split(" ")[0])
+
+    return combined_list
+

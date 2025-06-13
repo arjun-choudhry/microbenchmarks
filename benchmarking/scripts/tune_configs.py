@@ -4,7 +4,7 @@ import torch.distributed as dist
 import tempfile
 import yaml
 
-from utils.common import table_results, print_rank_0, GROUP_FORMATION_CONFIGS_HEADERS, AVG_TIME
+from utils.common import get_combined_results, table_results, print_rank_0, GROUP_FORMATION_CONFIGS_HEADERS, AVG_TIME
 from utils.parser import get_tuning_parser
 from utils.permute import get_all_combinations
 from parallel import groups
@@ -83,6 +83,11 @@ def main():
         for key, result_list in results.items():
             result_list.sort(key=lambda x: float(x[time_idx].split(" ")[0]))
             table_results(header, result_list, key)
+
+        if len(results) > 1:
+            results = get_combined_results(results, header)
+            table_results(header, results, "Combined Results")
+
 
         if error_results:
             headers = [*GROUP_FORMATION_CONFIGS_HEADERS, "Error Msg"]
