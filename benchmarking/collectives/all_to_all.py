@@ -3,7 +3,7 @@ import torch.distributed as dist
 import time
 import os
 
-from utils.common import table_results
+from utils.common import table_results, AVG_TIME
 from parallel import groups
 
 def form_grps():
@@ -35,11 +35,13 @@ def perform_collective(output_split, input_split, pg, key="", profiler=None):
         dist.all_to_all(output_split, input_split, group=pg)
     else:
         trace_file_path = f'{os.environ["TRACE_FILE_PREFIX"]}_{key}.json'
-        print(f"Writing trace file to {trace_file_path}")
+        with profiler() as prof:
+            dist.all_to_all(output_split, input_split, group=pg)
+
         if dist.get_rank() == 0:
-            with profiler() as prof:
-                dist.all_to_all(output_split, input_split, group=pg)
+            print(f"Writing trace file to {trace_file_path}")
             prof.export_chrome_trace(trace_file_path)
+
         torch.cuda.synchronize()
 
 def benchmark_all_to_all(min_size, max_size, step, num_iters, profiler):
@@ -92,5 +94,48 @@ def benchmark_all_to_all(min_size, max_size, step, num_iters, profiler):
                 ])
 
     if rank == 0:
-        table_results(results_grp['ep']['results'], "EP")
-        table_results(results_grp['etp']['results'], "ETP")
+        headers = ["Size (floats)", "Size (KB)", "Avg Time / call", "Avg Time on all ranks"]
+        table_results(headers, results_grp['ep']['results'], "EP")
+        table_results(headers, results_grp['etp']['results'], "ETP")
+
+
+def tune_all_to_all(payload_size, num_iters=5):
+    rank = dist.get_rank()
+
+    device = torch.device("cuda", rank % torch.cuda.device_count())
+    torch.cuda.set_device(device)
+
+    results_grp = form_grps()
+    results_headers = ["Size (floats)", "Size (KB)", AVG_TIME]
+
+    for key, parallel_grp in results_grp.items():
+        input_tensor = torch.randn(payload_size, device=device)
+        output_tensor = torch.empty_like(input_tensor)
+
+        input_split = list(input_tensor.chunk(parallel_grp['grp_size']))
+        output_split = list(output_tensor.chunk(parallel_grp['grp_size']))
+
+        for _ in range(5):
+            perform_collective(output_split, input_split, parallel_grp['grp'])
+
+        torch.cuda.synchronize()
+        start = time.time()
+
+        for _ in range(num_iters):
+            perform_collective(output_split, input_split, parallel_grp['grp'])
+
+        torch.cuda.synchronize()
+        end = time.time()
+
+        avg_time = torch.tensor([(end - start) / num_iters * 1000], device=device)  # ms
+
+        dist.reduce(avg_time, dst=0, op=dist.ReduceOp.MAX)
+        torch.cuda.synchronize()
+
+        parallel_grp["results"] = ([
+                payload_size,
+                f"{payload_size * 4 / 1024:.2f} KB",
+                f"{avg_time.item():.3f} ms",
+        ])
+
+    return results_grp, results_headers

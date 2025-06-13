@@ -1,16 +1,15 @@
+import torch
 from tabulate import tabulate
 
+GROUP_FORMATION_CONFIGS_HEADERS = ["Pipeline Configuration", "NCCL Configs"]
+AVG_TIME = "Avg Time / call"
 
-def profile_decorator(func):
-    def wrapper(*args, **kwargs):
-        print("Before function call")
-        result = func(*args, **kwargs)
-        print("After function call")
-        return result
-    return wrapper
-
-
-def table_results(results, key):
+def table_results(header, results, key):
+    print()
     print(f"Metrics for {key} collective")
-    headers = ["Size (floats)", "Size (KB)", "Avg Time / call", "Avg Time on all ranks"]
-    print(tabulate(results, headers=headers, tablefmt="pipe"))
+    print(tabulate(results, headers=header, tablefmt="pipe"))
+    print()
+
+def print_rank_0(msg):
+    if torch.distributed.get_rank() == 0:
+        print(msg)

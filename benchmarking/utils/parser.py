@@ -19,3 +19,12 @@ def get_parser():
     parser.add_argument("--etp", type=int)
 
     return parser
+
+def get_tuning_parser():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--collective", type=str, default="all_to_all", help="Type of collective to benchmark")
+    parser.add_argument("--payload-size", type=int, default=128, help="Minimum message size (in floats)")
+    parser.add_argument("--tuning-configs", type=str, default=None, help="file path containing the nccl configs to apply")
+    parser.add_argument("--profile-last", action='store_true')
+
+    return parser

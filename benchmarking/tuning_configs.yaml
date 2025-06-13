@@ -1,0 +1,13 @@
+group_formation_configs:
+  parallel_configs:
+    tp: [2, 4]
+    pp: [2]
+    cp: [2, 1]
+    vpp: [1]
+    ep: [1]
+    etp: [1]
+
+  nccl_group_configs:
+    ep:
+      max_ctas: [4, 8, 16, 32]
+      min_ctas: [1]

@@ -3,6 +3,7 @@ import torch.distributed as dist
 
 from functools import partial
 from utils.parser import get_parser
+from utils.common import print_rank_0
 from parallel import groups
 from collectives.all_to_all import benchmark_all_to_all
 from pathlib import Path
@@ -41,8 +42,7 @@ def main():
             with_modules=True,
             with_stack=True,
         )
-        print("profile is turned on")
-        print("++++++++++++++++++++++++++")
+        print_rank_0("profile is turned on")
     else:
         profiler=None
 

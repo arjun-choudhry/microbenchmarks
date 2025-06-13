@@ -8,12 +8,15 @@ echo "LOG_DIR: $LOG_DIR"
 export POD_NAME=${HOSTNAME:?}
 export TRACE_FILE_PREFIX="${LOG_DIR}/trace"
 
+export NCCL_P2P_NET_CHUNKSIZE=134217728
+
 torchrun --tee=3 --nproc-per-node=8 --nnodes=32 --master_port 23456 \
-  ${WORKSPACE}/benchmarking/benchmark.py \
+  ${WORKSPACE}/benchmarking/scripts/benchmark.py \
   --collective all_to_all \
   --tp 8 --pp 2 --vpp 6 --cp 2 --ep 32 --etp 2 \
   --min-size 1024 --max-size 1073741824 --step 33554432 \
   --nccl-comms nccl_configs.yaml \
+  --profile-last \
   2>&1 | tee "${LOG_DIR}/benchmark-${POD_NAME}.log"
 
 #  --tp 8 --pp 2 --vpp 6 --cp 2 --ep 32 --etp 2 \
