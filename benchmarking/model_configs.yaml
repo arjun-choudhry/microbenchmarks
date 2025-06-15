@@ -1,0 +1,11 @@
+layers:
+  - layer_type: linear
+    parallel_type: column
+    args:
+      input_features: 20
+      output_features: 30
+      bias: True
+
+data:
+  num_sequences: 5
+  features: 20

@@ -20,11 +20,21 @@ def get_parser():
 
     return parser
 
+
 def get_tuning_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument("--collective", type=str, default="all_to_all", help="Type of collective to benchmark")
     parser.add_argument("--payload-size", type=int, default=128, help="Minimum message size (in floats)")
     parser.add_argument("--tuning-configs", type=str, default=None, help="file path containing the nccl configs to apply")
-    parser.add_argument("--profile-last", action='store_true')
+    parser.add_argument("--profile-best", action='store_true')
+
+    return parser
+
+
+def get_ops_tuning_parser():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--tuning-configs", type=str, default=None, help="file path containing the nccl configs to apply")
+    parser.add_argument("--model-configs", type=str, default=None, help="file path containing the nccl configs to apply")
+    parser.add_argument("--profile-best", action='store_true')
 
     return parser
