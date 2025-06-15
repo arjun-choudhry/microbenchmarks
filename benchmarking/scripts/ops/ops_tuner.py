@@ -1,18 +1,15 @@
-import ast
 import os
 import torch
 import torch.distributed as dist
 import tempfile
 import yaml
 
-from utils.common import get_combined_results, table_results, print_rank_0, GROUP_FORMATION_CONFIGS_HEADERS, MODEL_CONFIGS_HEADERS, AVG_TIME
+from utils.common import table_results, print_rank_0, GROUP_FORMATION_CONFIGS_HEADERS, MODEL_CONFIGS_HEADERS, AVG_TIME
 from utils.parser import get_ops_tuning_parser
 from utils.permute import get_all_combinations
 from parallel import groups
-from ops.gemm import perform_gemm
 from scripts.ops.model_utils import create_model_from_configs
 from trainer.fit import train
-from pathlib import Path
 
 
 def executable(tuning_configs, model_configs, results=None):
@@ -95,7 +92,6 @@ def get_profile(args, model_configs, results, header):
         else:
             broadcast_list = [[]]
         torch.distributed.broadcast_object_list(broadcast_list, 0)
-        # print(broadcast_list)
         export_profile(broadcast_list[0], model_configs, header)
 
 def main():
@@ -124,38 +120,6 @@ def main():
     all_combinations = get_all_combinations(tuning_configs)
     total_configs_to_iterate = len(all_combinations)
     invalid_configs = 0
-
-    # func_to_perform = get_layer_func("gemm")
-
-    # parallel_configs = {
-    #     'tp': {
-    #         'type': "column_parallel",
-    #         "size": 8
-    #     }
-    #
-    # }
-
-    # profiler = torch.profiler.profile(
-    #     activities=[torch.profiler.ProfilerActivity.CPU, torch.profiler.ProfilerActivity.CUDA],
-    #     profile_memory=True,
-    #     record_shapes=True,
-    #     with_flops=False,
-    #     with_modules=True,
-    #     with_stack=True,
-    # )
-    # trace_file_path = f'{os.environ["TRACE_FILE_PREFIX"]}.json'
-    #
-    # with profiler as prof:
-    #     func_to_perform(5, 8, True, 4, parallel_configs, device='cuda')
-    # if dist.get_rank() == 0:
-    #     print(f"Writing trace file to {trace_file_path}")
-    #     prof.export_chrome_trace(trace_file_path)
-    # torch.cuda.synchronize()
-
-
-    # class_instance = get_instance(args.collective)
-    #
-    # results_headers = class_instance.get_tuning_result_headers()
 
     for idx, tuning_configs in enumerate(all_combinations):
         try:
